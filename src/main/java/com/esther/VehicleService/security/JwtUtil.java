@@ -19,21 +19,22 @@ public class JwtUtil {
     @Value("${JWT_EXP}")
     private Long jwtExp;
 
-    public String generateToken(String email){
+    public Key getKey(){
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    }
 
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    public String generateToken(String username){
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExp))
-                .signWith(key, SignatureAlgorithm.ES256)
+                .signWith(getKey(), SignatureAlgorithm.ES256)
                 .compact();
     }
 
-    public String getEmailFromToken(String token){
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    public String getUsernameFromToken(String token){
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -42,10 +43,12 @@ public class JwtUtil {
 
     public boolean validateToken(String token){
         try{
-            Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                    .setSigningKey(getKey())
+                    .build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (JwtException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
