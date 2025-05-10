@@ -16,19 +16,12 @@ import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService implements UserDetailsService {
+public class AuthService {
 
     private final UserRepository userRepository;
 
     private final BCryptPasswordEncoder passwordEncoder;
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity user =  userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-
-        return new User(user.getEmail(), user.getPassword(), new ArrayList<>());
-    }
 
     public UserEntity createUser(SignupRequest request) {
         String hashedPassword = passwordEncoder.encode(request.getPassword());
@@ -41,6 +34,10 @@ public class AuthService implements UserDetailsService {
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
     }
 
     public UserEntity findByEmail(String email) {

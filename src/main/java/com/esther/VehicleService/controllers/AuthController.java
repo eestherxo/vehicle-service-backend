@@ -9,11 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${CORS_ORIGIN}")
 @RestController("/auth")
 public class AuthController {
 
@@ -27,8 +29,12 @@ public class AuthController {
     public ResponseEntity<String> signup(@RequestBody SignupRequest signupRequest) {
 
         String email = signupRequest.getEmail();
+        String username = signupRequest.getUsername();
         if (authService.existsByEmail(email)) {
             return new ResponseEntity<>("Email is already in use!", HttpStatus.BAD_REQUEST);
+        }
+        if (authService.existsByUsername(username)){
+            return new ResponseEntity<>("Username is already in use!", HttpStatus.BAD_REQUEST);
         }
         authService.createUser(signupRequest);
         return new ResponseEntity<>("User registered successfully!", HttpStatus.CREATED);
@@ -37,11 +43,10 @@ public class AuthController {
     @PostMapping("/auth/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest){
 
-        boolean foundUser = authService.existsByEmail(loginRequest.getEmail());
         String password = loginRequest.getPassword();
         UserEntity user = authService.findByEmail(loginRequest.getEmail());
 
-        if (foundUser || !authService.checkPassword(password, user.getPassword())) {
+        if (user == null || !authService.checkPassword(password, user.getPassword())) {
             return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
         }
 
